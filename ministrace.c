@@ -13,6 +13,12 @@ int main(int argc, char **argv) {
 
   ptrace_init();
 
+  /*
+   * Because the argv array contains the currently running program as the first
+   * argument, we create child argc and argv variables that chop that off. We
+   * also need to provide execvp with a null-terminate args list, which isn't
+   * guaranteed with the args list passed through main().
+   */
   int cargc = argc - 1;
   char **cargv = argv + 1;
 
@@ -27,18 +33,29 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  /*
+   * Main loop: prints out syscalls and their return values.
+   */
   while (1) {
     if (ptrace_await_syscall(child_pid) != 0)
       break;
     int sysnum = ptrace_syscall_num(child_pid);
+    printf("[%d] %-16s = ", child_pid, sysnum2name(sysnum));
 
     if (ptrace_await_syscall(child_pid) != 0)
       break;
     int sysret = ptrace_syscall_ret(child_pid);
+    printf("%d\n", sysret);
 
-    printf("[%d] %-16s = %d\n", child_pid, sysnum2name(sysnum), sysret);
+    /*
+     * By default, stdout is buffered and won't always print out each line as it
+     * happens. Flushing stdout for each syscall and return means we print out
+     * the values at the closest point to when the syscall happened in the
+     * child.
+     */
     fflush(stdout);
   }
 
+  printf("\n");
   return 0;
 }
