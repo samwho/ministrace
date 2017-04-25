@@ -13,7 +13,7 @@
 
 #define CHECK_SYSCALL(call) exit_on_error(call, __FILE__, __LINE__)
 
-int exit_on_error(int ret, char* file, int lineno);
+int exit_on_error(int ret, char *file, int lineno);
 const char *sysnum2name(int sysnum);
 
 #endif

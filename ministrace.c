@@ -1,15 +1,26 @@
-#include <stdio.h>
-#include <unistd.h>
 #include "ptrace_util.h"
 #include "syscall_util.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-void child() {
-  printf("Hello, from child!\n");
-}
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    fprintf(stderr, "Usage: %s prog args\n", argv[0]);
+    exit(1);
+  }
 
-int main(void) {
   ptrace_init();
-  pid_t child_pid = ptrace_spawn_func(child);
+
+  int cargc = argc - 1;
+  char **cargv = argv + 1;
+
+  char *args[cargc + 1];
+  memcpy(args, cargv, cargc * sizeof(char *));
+  args[cargc] = NULL;
+
+  pid_t child_pid = ptrace_spawn_execvp(args[0], args);
 
   if (child_pid == -1) {
     fprintf(stderr, "child exited unexpectedly\n");

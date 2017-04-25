@@ -62,7 +62,7 @@ void ptrace_traceme() {
   raise(SIGSTOP);
 }
 
-pid_t ptrace_spawn_execvp(const char* path, char *const argv[]) {
+pid_t ptrace_spawn_execvp(const char *path, char *const argv[]) {
   int pid = fork();
   if (pid > 0) {
     return ptrace_spawn_post(pid);
@@ -83,4 +83,3 @@ pid_t ptrace_spawn_func(void (*f)()) {
   f();
   exit(0);
 }
-
