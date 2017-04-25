@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "ptrace_util.h"
+#include "syscall_util.h"
 
 void child() {
   printf("Hello, from child!\n");
@@ -8,7 +9,7 @@ void child() {
 
 int main(void) {
   ptrace_init();
-  pid_t child_pid = ptrace_spawn(child);
+  pid_t child_pid = ptrace_spawn_func(child);
 
   if (child_pid == -1) {
     fprintf(stderr, "child exited unexpectedly\n");
@@ -24,7 +25,8 @@ int main(void) {
       break;
     int sysret = ptrace_syscall_ret(child_pid);
 
-    printf("syscall\t%d\treturned\t%d\n", sysnum, sysret);
+    printf("[%d] %-16s = %d\n", child_pid, sysnum2name(sysnum), sysret);
+    fflush(stdout);
   }
 
   return 0;

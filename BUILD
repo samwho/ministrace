@@ -11,6 +11,7 @@ cc_binary(
     copts = COPTS,
     deps = [
         ":ptrace_util",
+        ":syscall_util",
     ],
 )
 

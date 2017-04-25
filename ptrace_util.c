@@ -19,28 +19,6 @@ void ptrace_init() {
   }
 }
 
-pid_t ptrace_spawn(void (*f)()) {
-  int pid = fork();
-  if (pid == 0) {
-    CHECK_SYSCALL(ptrace(PTRACE_TRACEME, 0, 0, 0));
-    raise(SIGSTOP);
-
-    f();
-    exit(0);
-  }
-
-  int status;
-  CHECK_SYSCALL(waitpid(pid, &status, 0));
-  if (WIFEXITED(status))
-    return -1;
-
-  // Make it possible to distinguish when a child process has stopped due to a
-  // syscall happening, instead of any SIGTRAP.
-  CHECK_SYSCALL(ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD));
-
-  return pid;
-}
-
 int ptrace_await_syscall(pid_t child_pid) {
   int status;
 
@@ -65,3 +43,44 @@ int ptrace_syscall_num(pid_t child_pid) {
 int ptrace_syscall_ret(pid_t child_pid) {
   return CHECK_SYSCALL(ptrace(PTRACE_PEEKUSER, child_pid, SYSCALL_RET));
 }
+
+pid_t ptrace_spawn_post(pid_t pid) {
+  int status;
+  CHECK_SYSCALL(waitpid(pid, &status, 0));
+  if (WIFEXITED(status))
+    return -1;
+
+  // Make it possible to distinguish when a child process has stopped due to a
+  // syscall happening, instead of any SIGTRAP.
+  CHECK_SYSCALL(ptrace(PTRACE_SETOPTIONS, pid, 0, PTRACE_O_TRACESYSGOOD));
+
+  return pid;
+}
+
+void ptrace_traceme() {
+  CHECK_SYSCALL(ptrace(PTRACE_TRACEME, 0, 0, 0));
+  raise(SIGSTOP);
+}
+
+pid_t ptrace_spawn_execvp(const char* path, char *const argv[]) {
+  int pid = fork();
+  if (pid > 0) {
+    return ptrace_spawn_post(pid);
+  }
+
+  ptrace_traceme();
+  CHECK_SYSCALL(execvp(path, argv));
+  return -1;
+}
+
+pid_t ptrace_spawn_func(void (*f)()) {
+  int pid = fork();
+  if (pid > 0) {
+    return ptrace_spawn_post(pid);
+  }
+
+  ptrace_traceme();
+  f();
+  exit(0);
+}
+
