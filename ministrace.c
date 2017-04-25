@@ -1,17 +1,5 @@
-#include <errno.h>
-#include <error.h>
-#include <signal.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/capability.h>
-#include <sys/prctl.h>
-#include <sys/ptrace.h>
-#include <sys/types.h>
-#include <sys/user.h>
-#include <sys/wait.h>
 #include <unistd.h>
-
 #include "ptrace_util.h"
 
 void child() {
